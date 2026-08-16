@@ -119,3 +119,19 @@ def test_legacy_csv_is_migrated_to_readable_arabic_headers(tmp_path: Path) -> No
     assert rows[0]["رقم الطلب"] == "legacy-1"
     assert rows[0]["البيانات الناقصة"] == "السجل التجاري"
     assert rows[0]["التنبيهات المهمة"] == "تنبيه أول • تنبيه ثان"
+
+
+def test_write_failure_cleans_temporary_file_and_explains_lock(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    path = tmp_path / "results.csv"
+
+    def reject_replace(source: Path, destination: Path) -> None:
+        raise PermissionError("file is locked")
+
+    monkeypatch.setattr(Path, "replace", reject_replace)
+
+    with pytest.raises(StorageError, match="أغلق الملف"):
+        append_request(_request(), path)
+
+    assert list(tmp_path.glob("*.tmp")) == []

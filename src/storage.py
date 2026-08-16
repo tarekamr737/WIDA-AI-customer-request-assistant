@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from pathlib import Path
 import csv
 import json
+import tempfile
 
 from src.models import ProcessedRequest
 
@@ -208,9 +209,18 @@ def append_request(
 
 def _write_rows(path: Path, rows: Iterable[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary_path = path.with_suffix(path.suffix + ".tmp")
+    temporary_path: Path | None = None
     try:
-        with temporary_path.open("w", encoding="utf-8-sig", newline="") as handle:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8-sig",
+            newline="",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as handle:
+            temporary_path = Path(handle.name)
             writer = csv.DictWriter(handle, fieldnames=CSV_HEADERS)
             writer.writeheader()
             writer.writerows(
@@ -221,8 +231,19 @@ def _write_rows(path: Path, rows: Iterable[dict[str, object]]) -> None:
                 for row in rows
             )
         temporary_path.replace(path)
+    except PermissionError as exc:
+        raise StorageError(
+            f"تعذر تحديث {path.name}. أغلق الملف إذا كان مفتوحًا في Excel "
+            "أو برنامج آخر، ثم أعد المحاولة."
+        ) from exc
     except OSError as exc:
         raise StorageError("تعذر تحديث نتيجة الطلب محليًا.") from exc
+    finally:
+        if temporary_path is not None and temporary_path.exists():
+            try:
+                temporary_path.unlink()
+            except OSError:
+                pass
 
 
 def update_request(
