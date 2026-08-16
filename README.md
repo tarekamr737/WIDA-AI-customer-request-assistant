@@ -1,5 +1,8 @@
 # WIDA AI customer request assistant
 
+<img width="1920" height="1080" alt="Screenshot 2026-08-16 122445" src="https://github.com/user-attachments/assets/3b3eeb9a-663e-4f4b-931a-e3b2e16f2d89" />
+
+
 A small Arabic-first internal assistant for Horizon B2B Services. It accepts pasted text or a TXT/PDF/DOCX request, extracts only stated facts, classifies against the eight supplied services, applies operating policies deterministically, saves a pending audit row, and lets a reviewer correct, approve, or request clarification. It never sends a customer message.
 
 ## Architecture and tools
