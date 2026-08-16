@@ -26,7 +26,7 @@
 - [x] Create concise one-page `README.md`.
 - [x] Run `pytest -q`; fix all failures.
 - [x] Run `streamlit run app.py`; complete one full review flow.
-- [ ] Confirm no API keys/secrets are committed.
+- [x] Confirm no API keys/secrets are committed.
 
 ## Only if time remains
 - [ ] Add export/download of the reviewed summary.
