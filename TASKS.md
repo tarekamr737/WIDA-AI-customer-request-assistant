@@ -12,7 +12,7 @@
 - [x] Implement one-call OpenAI-compatible LLM adapter + one JSON repair retry.
 - [x] Validate service IDs and unknown/null behavior.
 - [x] Implement deterministic missing-data checks.
-- [ ] Implement deterministic policy precedence and alerts.
+- [x] Implement deterministic policy precedence and alerts.
 - [ ] Implement exact internal-summary renderer.
 - [ ] Implement UTF-8-SIG CSV append/update persistence.
 - [ ] Auto-save processed result as `بانتظار المراجعة`.
