@@ -8,7 +8,7 @@
 - [x] Parse catalog IDs/names/use-cases/exclusions/standard durations.
 - [x] Parse global minimum-execution days from current policy text.
 - [x] Implement TXT/PDF/DOCX request text extraction.
-- [ ] Create compact `prompts/analyze_request.md`.
+- [x] Create compact `prompts/analyze_request.md`.
 - [ ] Implement one-call OpenAI-compatible LLM adapter + one JSON repair retry.
 - [ ] Validate service IDs and unknown/null behavior.
 - [ ] Implement deterministic missing-data checks.
