@@ -18,7 +18,7 @@
 - [x] Auto-save processed result as `بانتظار المراجعة`.
 - [x] Build Streamlit input + result + editable review UI.
 - [x] Implement `اعتماد` -> update row to `تمت المراجعة`.
-- [ ] Implement `يحتاج استيضاح` behavior.
+- [x] Implement `يحتاج استيضاح` behavior.
 - [ ] Add fake-LLM unit tests for policy/processor/storage.
 - [ ] Regression-check Requests A–E without hardcoded request IDs.
 - [ ] Verify a brand-new request can be processed.

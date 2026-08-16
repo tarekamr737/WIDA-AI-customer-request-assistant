@@ -4,7 +4,7 @@ from pathlib import Path
 from src.models import AIAnalysis
 from src.processor import process_request
 from src.reference_loader import DEFAULT_REFERENCE_DIR
-from src.review import approve_request
+from src.review import approve_request, request_clarification
 from tests.test_processor import FakeLLM, _analysis
 
 
@@ -68,3 +68,36 @@ def test_approval_rejects_service_outside_current_catalog(tmp_path: Path) -> Non
         raise AssertionError("Expected invalid reviewer service selection to fail")
 
     assert "بانتظار المراجعة" in results_path.read_text(encoding="utf-8-sig")
+
+
+def test_clarification_saves_edits_and_keeps_request_pending(tmp_path: Path) -> None:
+    results_path = tmp_path / "results.csv"
+    outcome = process_request(
+        "نحتاج إلى لوحة بيانات.",
+        "نص ملصق",
+        FakeLLM(_analysis()),
+        reference_dir=DEFAULT_REFERENCE_DIR,
+        results_path=results_path,
+        new_request_id=lambda: "request-clarify",
+    )
+    edited = AIAnalysis.model_validate(
+        {
+            **outcome.request.analysis.model_dump(),
+            "contact_role": None,
+        }
+    )
+
+    clarified = request_clarification(
+        outcome,
+        edited,
+        results_path=results_path,
+        now=lambda: datetime(2026, 8, 16, 11, 0, tzinfo=UTC),
+    )
+
+    csv_text = results_path.read_text(encoding="utf-8-sig")
+    assert clarified.request.summary.review_status == "بانتظار المراجعة"
+    assert "طلب البيانات أو تفاصيل النطاق" in clarified.request.summary.next_step
+    assert any("حدد المراجع" in alert for alert in clarified.request.summary.alerts)
+    assert clarified.request.analysis.contact_role is None
+    assert csv_text.count("request-clarify") == 1
+    assert "بانتظار المراجعة" in csv_text

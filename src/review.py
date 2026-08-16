@@ -39,3 +39,42 @@ def approve_request(
         rendered_summary=rendered,
         references=outcome.references,
     )
+
+
+def request_clarification(
+    outcome: ProcessingOutcome,
+    edited_analysis: AIAnalysis,
+    *,
+    results_path: Path = DEFAULT_RESULTS_PATH,
+    now: Callable[[], datetime] = lambda: datetime.now(UTC),
+) -> ProcessingOutcome:
+    """Save reviewer edits while keeping the request pending for clarification."""
+
+    validate_analysis_service_ids(edited_analysis, list(outcome.references.services))
+    summary = build_internal_summary(
+        edited_analysis,
+        outcome.references,
+        outcome.request.raw_request,
+    )
+    clarification_alert = "حدد المراجع أن الطلب يحتاج إلى استيضاح قبل الاعتماد."
+    summary = summary.model_copy(
+        update={
+            "alerts": [*summary.alerts, clarification_alert],
+            "next_step": "طلب البيانات أو تفاصيل النطاق الناقصة من العميل ثم إعادة المراجعة.",
+            "review_status": "بانتظار المراجعة",
+        }
+    )
+    rendered = render_internal_summary(summary, outcome.references.raw_template_text)
+    updated_request = outcome.request.model_copy(
+        update={
+            "updated_at": now(),
+            "analysis": edited_analysis,
+            "summary": summary,
+        }
+    )
+    update_request(updated_request, results_path)
+    return ProcessingOutcome(
+        request=updated_request,
+        rendered_summary=rendered,
+        references=outcome.references,
+    )

@@ -8,7 +8,7 @@ from src.models import AIAnalysis
 from src.processor import ProcessingOutcome, process_request
 from src.reference_loader import ReferenceLoadError
 from src.renderer import RenderError
-from src.review import approve_request
+from src.review import approve_request, request_clarification
 from src.storage import StorageError
 
 
@@ -20,13 +20,16 @@ st.set_page_config(
 
 st.session_state.setdefault("processing_outcome", None)
 review_notice = st.session_state.pop("review_notice", None)
+review_notice_kind = st.session_state.pop("review_notice_kind", None)
 
 st.title("مساعد معالجة طلبات العملاء")
 st.caption(
     "أداة داخلية تستخرج بيانات الطلب، وتقترح الخدمة من دليل هورايزون فقط، "
     "ثم تطبق السياسات قبل المراجعة البشرية."
 )
-if review_notice:
+if review_notice and review_notice_kind == "clarification":
+    st.info(review_notice, icon=":material/help:")
+elif review_notice:
     st.success(review_notice, icon=":material/check_circle:")
 
 with st.container(border=True):
@@ -209,7 +212,6 @@ if outcome is not None:
             needs_clarification = st.form_submit_button(
                 "يحتاج استيضاح",
                 icon=":material/help:",
-                disabled=True,
             )
             approved = st.form_submit_button(
                 "اعتماد",
@@ -217,7 +219,7 @@ if outcome is not None:
                 icon=":material/check_circle:",
             )
 
-    if approved:
+    if approved or needs_clarification:
         try:
             edited_analysis = AIAnalysis(
                 organization_name=organization_name,
@@ -237,14 +239,27 @@ if outcome is not None:
                 classification_state=classification_state,
                 classification_reason=classification_reason,
             )
-            st.session_state.processing_outcome = approve_request(
-                outcome,
-                edited_analysis,
-            )
+            if approved:
+                st.session_state.processing_outcome = approve_request(
+                    outcome,
+                    edited_analysis,
+                )
+            else:
+                st.session_state.processing_outcome = request_clarification(
+                    outcome,
+                    edited_analysis,
+                )
         except (ValueError, RenderError, StorageError) as exc:
             st.error(str(exc), icon=":material/error:")
         else:
-            st.session_state.review_notice = "تم اعتماد الطلب وحفظ تعديلات المراجع."
+            if approved:
+                st.session_state.review_notice = "تم اعتماد الطلب وحفظ تعديلات المراجع."
+                st.session_state.review_notice_kind = "approved"
+            else:
+                st.session_state.review_notice = (
+                    "حُفظت تعديلات المراجع، وبقي الطلب بانتظار الاستيضاح."
+                )
+                st.session_state.review_notice_kind = "clarification"
             st.rerun()
 
     st.subheader("الملخص الداخلي المحفوظ", anchor=False)
