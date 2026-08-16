@@ -14,7 +14,7 @@
 - [x] Implement deterministic missing-data checks.
 - [x] Implement deterministic policy precedence and alerts.
 - [x] Implement exact internal-summary renderer.
-- [ ] Implement UTF-8-SIG CSV append/update persistence.
+- [x] Implement UTF-8-SIG CSV append/update persistence.
 - [ ] Auto-save processed result as `بانتظار المراجعة`.
 - [ ] Build Streamlit input + result + editable review UI.
 - [ ] Implement `اعتماد` -> update row to `تمت المراجعة`.
