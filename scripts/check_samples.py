@@ -18,6 +18,8 @@ EXPECTED = {
 
 
 def main() -> int:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     client = OpenAICompatibleLLM.from_env()
     results_path = Path("data") / "manual_regression_results.csv"
     failures: list[str] = []
