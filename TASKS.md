@@ -7,7 +7,7 @@
 - [x] Implement runtime service/policy reference loader.
 - [x] Parse catalog IDs/names/use-cases/exclusions/standard durations.
 - [x] Parse global minimum-execution days from current policy text.
-- [ ] Implement TXT/PDF/DOCX request text extraction.
+- [x] Implement TXT/PDF/DOCX request text extraction.
 - [ ] Create compact `prompts/analyze_request.md`.
 - [ ] Implement one-call OpenAI-compatible LLM adapter + one JSON repair retry.
 - [ ] Validate service IDs and unknown/null behavior.
