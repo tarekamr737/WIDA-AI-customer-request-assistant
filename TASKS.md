@@ -11,7 +11,7 @@
 - [x] Create compact `prompts/analyze_request.md`.
 - [x] Implement one-call OpenAI-compatible LLM adapter + one JSON repair retry.
 - [x] Validate service IDs and unknown/null behavior.
-- [ ] Implement deterministic missing-data checks.
+- [x] Implement deterministic missing-data checks.
 - [ ] Implement deterministic policy precedence and alerts.
 - [ ] Implement exact internal-summary renderer.
 - [ ] Implement UTF-8-SIG CSV append/update persistence.
