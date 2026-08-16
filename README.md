@@ -6,7 +6,7 @@ A small Arabic-first internal assistant for Horizon B2B Services. It accepts pas
 
 The flow is `input → text extraction → one LLM extraction/classification call → Pydantic validation → Python policy checks → supplied template → UTF-8-SIG CSV → human review`. The implementation uses Python 3.11+, Streamlit, Pydantic, the OpenAI SDK through a small OpenAI-compatible adapter, `pypdf`, `python-docx`, standard-library CSV, and Pytest. There is no agent framework, database, vector store, RAG, or embedding call; the catalog is small enough to send directly with each request.
 
-## Setup on Windows (all project data on D:)
+## Setup on Windows
 
 ```powershell
 Set-Location D:\WIDA
