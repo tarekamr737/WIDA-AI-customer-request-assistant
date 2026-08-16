@@ -3,7 +3,7 @@
 ## Must
 - [x] Extract supplied package into `references/`; preserve source files unchanged.
 - [x] Create Python project, `requirements.txt`, `.env.example`, `.gitignore`.
-- [ ] Implement Pydantic domain models.
+- [x] Implement Pydantic domain models.
 - [ ] Implement runtime service/policy reference loader.
 - [ ] Parse catalog IDs/names/use-cases/exclusions/standard durations.
 - [ ] Parse global minimum-execution days from current policy text.
