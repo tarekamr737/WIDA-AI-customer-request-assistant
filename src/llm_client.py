@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 from pydantic import ValidationError
 
-from src.models import AIAnalysis, ServiceDefinition
+from src.models import AIAnalysis, ServiceDefinition, validate_analysis_service_ids
 
 
 DEFAULT_PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "analyze_request.md"
@@ -91,15 +91,21 @@ class OpenAICompatibleLLM:
         return content
 
     @staticmethod
-    def _parse(content: str) -> tuple[AIAnalysis | None, str | None]:
+    def _parse(
+        content: str, services: Sequence[ServiceDefinition]
+    ) -> tuple[AIAnalysis | None, str | None]:
         try:
             payload = json.loads(content)
-            return AIAnalysis.model_validate(payload), None
+            analysis = AIAnalysis.model_validate(payload)
+            validate_analysis_service_ids(analysis, list(services))
+            return analysis, None
         except json.JSONDecodeError as exc:
             return None, f"JSON syntax error at position {exc.pos}"
         except ValidationError as exc:
             compact_errors = exc.errors(include_input=False, include_url=False)
             return None, json.dumps(compact_errors, ensure_ascii=False, separators=(",", ":"))
+        except ValueError as exc:
+            return None, str(exc)
 
     @staticmethod
     def _request_payload(request_text: str, services: Sequence[ServiceDefinition]) -> str:
@@ -119,7 +125,7 @@ class OpenAICompatibleLLM:
         ]
 
         first_content = self._complete(messages)
-        analysis, validation_error = self._parse(first_content)
+        analysis, validation_error = self._parse(first_content, services)
         if analysis is not None:
             return analysis
 
@@ -135,7 +141,7 @@ class OpenAICompatibleLLM:
             },
         ]
         repaired_content = self._complete(repair_messages)
-        repaired_analysis, _ = self._parse(repaired_content)
+        repaired_analysis, _ = self._parse(repaired_content, services)
         if repaired_analysis is None:
             raise LLMResponseError(
                 "تعذر التحقق من استجابة النموذج بعد محاولة إصلاح واحدة. أعد المحاولة."

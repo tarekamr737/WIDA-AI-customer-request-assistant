@@ -22,6 +22,10 @@ VALID_RESPONSE = """{
   "classification_reason": "المخرج المطلوب لوحة بيانات"
 }"""
 
+INVALID_SERVICE_RESPONSE = VALID_RESPONSE.replace(
+    '"primary_service_id": 5', '"primary_service_id": 99'
+)
+
 
 class FakeCompletions:
     def __init__(self, responses: list[str | Exception]) -> None:
@@ -82,6 +86,15 @@ def test_invalid_json_gets_one_successful_repair_retry(tmp_path: Path) -> None:
 
     assert len(completions.calls) == 2
     assert "خطأ التحقق" in completions.calls[1]["messages"][-1]["content"]
+
+
+def test_unknown_service_id_gets_one_repair_retry(tmp_path: Path) -> None:
+    adapter, completions = _adapter(tmp_path, [INVALID_SERVICE_RESPONSE, VALID_RESPONSE])
+
+    analysis = adapter.analyze("طلب لوحة بيانات", [_service()])
+
+    assert analysis.primary_service_id == 5
+    assert len(completions.calls) == 2
 
 
 def test_invalid_repair_stops_after_two_calls(tmp_path: Path) -> None:

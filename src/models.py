@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 ClassificationState = Literal["matched", "out_of_scope", "unclear"]
@@ -65,6 +65,31 @@ class AIAnalysis(DomainModel):
     classification_state: ClassificationState
     classification_reason: str = Field(min_length=1)
 
+    @field_validator(
+        "organization_name",
+        "contact_name",
+        "contact_role",
+        "contact_method",
+        "requested_deadline_text",
+        "commercial_register_text",
+        mode="before",
+    )
+    @classmethod
+    def normalize_unknown_text(cls, value: object) -> object:
+        if not isinstance(value, str):
+            return value
+        normalized = value.strip()
+        unknown_markers = {
+            "",
+            "null",
+            "unknown",
+            "غير معروف",
+            "غير مذكور",
+            "غير محدد",
+            "غير واضح",
+        }
+        return None if normalized.lower() in unknown_markers else normalized
+
     @model_validator(mode="after")
     def validate_service_selection(self) -> "AIAnalysis":
         if self.classification_state == "matched" and self.primary_service_id is None:
@@ -78,6 +103,24 @@ class AIAnalysis(DomainModel):
         if self.secondary_service_id is not None and self.primary_service_id is None:
             raise ValueError("a secondary service requires a primary service")
         return self
+
+
+def validate_analysis_service_ids(
+    analysis: AIAnalysis, services: tuple[ServiceDefinition, ...] | list[ServiceDefinition]
+) -> AIAnalysis:
+    """Reject model-selected IDs that do not exist in the current catalog."""
+
+    allowed_ids = {service.id for service in services}
+    selected_ids = {
+        service_id
+        for service_id in (analysis.primary_service_id, analysis.secondary_service_id)
+        if service_id is not None
+    }
+    invalid_ids = selected_ids - allowed_ids
+    if invalid_ids:
+        invalid_text = ", ".join(str(service_id) for service_id in sorted(invalid_ids))
+        raise ValueError(f"service IDs are not in the current catalog: {invalid_text}")
+    return analysis
 
 
 class PolicyResult(DomainModel):

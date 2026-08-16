@@ -10,7 +10,7 @@
 - [x] Implement TXT/PDF/DOCX request text extraction.
 - [x] Create compact `prompts/analyze_request.md`.
 - [x] Implement one-call OpenAI-compatible LLM adapter + one JSON repair retry.
-- [ ] Validate service IDs and unknown/null behavior.
+- [x] Validate service IDs and unknown/null behavior.
 - [ ] Implement deterministic missing-data checks.
 - [ ] Implement deterministic policy precedence and alerts.
 - [ ] Implement exact internal-summary renderer.
