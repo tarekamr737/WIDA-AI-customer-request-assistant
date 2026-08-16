@@ -6,7 +6,7 @@ import re
 
 from pydantic import ValidationError
 
-from src.models import ServiceDefinition
+from src.models import ReferenceData, ServiceDefinition
 
 
 DEFAULT_REFERENCE_DIR = Path(__file__).resolve().parents[1] / "references"
@@ -25,6 +25,9 @@ class RawReferences:
 
 _SERVICE_HEADER = re.compile(r"(?m)^(?P<id>\d+)\.\s+(?P<name>[^\r\n]+?)\s*$")
 _DURATION_RANGE = re.compile(r"(?P<min>\d+)\s+إلى\s+(?P<max>\d+)\s+(?:يوم|أيام)")
+_GLOBAL_MINIMUM = re.compile(
+    r"الحد الأدنى لأي تنفيذ هو\s*(?P<days>\d+)\s*(?:يوم|أيام)\s+عمل"
+)
 
 
 def _service_field(block: str, label: str, service_id: int) -> str:
@@ -73,6 +76,20 @@ def parse_service_catalog(text: str) -> tuple[ServiceDefinition, ...]:
     return tuple(services)
 
 
+def parse_global_min_execution_days(policy_text: str) -> int:
+    """Extract the global minimum duration from its authoritative policy sentence."""
+
+    match = _GLOBAL_MINIMUM.search(policy_text)
+    if match is None:
+        raise ReferenceLoadError(
+            "Operating policies do not define a recognizable minimum execution duration"
+        )
+    days = int(match.group("days"))
+    if days < 1:
+        raise ReferenceLoadError("Minimum execution duration must be at least one day")
+    return days
+
+
 def _read_required_text(path: Path) -> str:
     try:
         content = path.read_text(encoding="utf-8")
@@ -93,4 +110,16 @@ def load_reference_texts(reference_dir: Path = DEFAULT_REFERENCE_DIR) -> RawRefe
         service_catalog=_read_required_text(reference_dir / "02_Service_Catalog.txt"),
         operating_policies=_read_required_text(reference_dir / "03_Operating_Policies.txt"),
         output_template=_read_required_text(reference_dir / "04_Output_Template.txt"),
+    )
+
+
+def load_references(reference_dir: Path = DEFAULT_REFERENCE_DIR) -> ReferenceData:
+    """Load and validate all deterministic reference data from current files."""
+
+    raw = load_reference_texts(reference_dir)
+    return ReferenceData(
+        services=parse_service_catalog(raw.service_catalog),
+        global_min_execution_days=parse_global_min_execution_days(raw.operating_policies),
+        raw_policy_text=raw.operating_policies,
+        raw_template_text=raw.output_template,
     )

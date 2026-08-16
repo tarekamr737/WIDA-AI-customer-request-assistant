@@ -5,7 +5,9 @@ import pytest
 from src.reference_loader import (
     DEFAULT_REFERENCE_DIR,
     ReferenceLoadError,
+    load_references,
     load_reference_texts,
+    parse_global_min_execution_days,
     parse_service_catalog,
 )
 
@@ -62,3 +64,21 @@ def test_catalog_parser_rejects_an_incomplete_catalog() -> None:
    زمن التنفيذ القياسي: 3 إلى 5 أيام عمل.
 """
         )
+
+
+def test_policy_parser_extracts_current_global_minimum() -> None:
+    references = load_references(DEFAULT_REFERENCE_DIR)
+
+    assert references.global_min_execution_days == 3
+    assert len(references.services) == 8
+
+
+def test_policy_parser_uses_current_text() -> None:
+    policy = "الحد الأدنى لأي تنفيذ هو 6 أيام عمل من تاريخ الاعتماد."
+
+    assert parse_global_min_execution_days(policy) == 6
+
+
+def test_policy_parser_rejects_missing_minimum() -> None:
+    with pytest.raises(ReferenceLoadError, match="minimum execution duration"):
+        parse_global_min_execution_days("لا توجد مدة معرفة هنا.")
