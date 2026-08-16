@@ -1,4 +1,5 @@
 from pathlib import Path
+import shutil
 
 import pytest
 
@@ -82,3 +83,33 @@ def test_policy_parser_uses_current_text() -> None:
 def test_policy_parser_rejects_missing_minimum() -> None:
     with pytest.raises(ReferenceLoadError, match="minimum execution duration"):
         parse_global_min_execution_days("لا توجد مدة معرفة هنا.")
+
+
+def test_catalog_and_policy_edits_apply_on_the_next_load(tmp_path: Path) -> None:
+    reference_dir = tmp_path / "references"
+    shutil.copytree(DEFAULT_REFERENCE_DIR, reference_dir)
+    before = load_references(reference_dir)
+
+    catalog_path = reference_dir / "02_Service_Catalog.txt"
+    catalog_path.write_text(
+        catalog_path.read_text(encoding="utf-8").replace(
+            "تحليل البيانات ولوحات ذكاء الأعمال",
+            "تحليل البيانات والتقارير التنفيذية",
+        ),
+        encoding="utf-8",
+    )
+    policy_path = reference_dir / "03_Operating_Policies.txt"
+    policy_path.write_text(
+        policy_path.read_text(encoding="utf-8").replace(
+            "الحد الأدنى لأي تنفيذ هو 3 أيام عمل",
+            "الحد الأدنى لأي تنفيذ هو 4 أيام عمل",
+        ),
+        encoding="utf-8",
+    )
+
+    after = load_references(reference_dir)
+
+    assert before.services[4].name == "تحليل البيانات ولوحات ذكاء الأعمال"
+    assert after.services[4].name == "تحليل البيانات والتقارير التنفيذية"
+    assert before.global_min_execution_days == 3
+    assert after.global_min_execution_days == 4

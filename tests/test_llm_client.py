@@ -113,3 +113,14 @@ def test_provider_exception_is_replaced_with_safe_message(tmp_path: Path) -> Non
         adapter.analyze("طلب لوحة بيانات", [_service()])
 
     assert "secret-bearing" not in str(caught.value)
+
+
+def test_prompt_edit_applies_on_the_next_analysis_call(tmp_path: Path) -> None:
+    adapter, completions = _adapter(tmp_path, [VALID_RESPONSE, VALID_RESPONSE])
+
+    adapter.analyze("الطلب الأول", [_service()])
+    adapter.prompt_path.write_text("Updated prompt rules.", encoding="utf-8")
+    adapter.analyze("الطلب الثاني", [_service()])
+
+    assert completions.calls[0]["messages"][0]["content"] == "Return JSON only."
+    assert completions.calls[1]["messages"][0]["content"] == "Updated prompt rules."

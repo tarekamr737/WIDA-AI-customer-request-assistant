@@ -22,7 +22,7 @@
 - [x] Add fake-LLM unit tests for policy/processor/storage.
 - [x] Regression-check Requests A–E without hardcoded request IDs.
 - [x] Verify a brand-new request can be processed.
-- [ ] Verify changing catalog/policy/prompt takes effect after rerun.
+- [x] Verify changing catalog/policy/prompt takes effect after rerun.
 - [ ] Create concise one-page `README.md`.
 - [ ] Run `pytest -q`; fix all failures.
 - [ ] Run `streamlit run app.py`; complete one full review flow.
