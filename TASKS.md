@@ -2,7 +2,7 @@
 
 ## Must
 - [x] Extract supplied package into `references/`; preserve source files unchanged.
-- [ ] Create Python project, `requirements.txt`, `.env.example`, `.gitignore`.
+- [x] Create Python project, `requirements.txt`, `.env.example`, `.gitignore`.
 - [ ] Implement Pydantic domain models.
 - [ ] Implement runtime service/policy reference loader.
 - [ ] Parse catalog IDs/names/use-cases/exclusions/standard durations.
