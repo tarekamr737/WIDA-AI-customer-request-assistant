@@ -16,7 +16,7 @@
 - [x] Implement exact internal-summary renderer.
 - [x] Implement UTF-8-SIG CSV append/update persistence.
 - [x] Auto-save processed result as `بانتظار المراجعة`.
-- [ ] Build Streamlit input + result + editable review UI.
+- [x] Build Streamlit input + result + editable review UI.
 - [ ] Implement `اعتماد` -> update row to `تمت المراجعة`.
 - [ ] Implement `يحتاج استيضاح` behavior.
 - [ ] Add fake-LLM unit tests for policy/processor/storage.

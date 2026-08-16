@@ -1,0 +1,20 @@
+[theme]
+base = "light"
+primaryColor = "#0B5D5B"
+backgroundColor = "#FCFBF7"
+secondaryBackgroundColor = "#F2EEE4"
+textColor = "#17211F"
+borderColor = "#D8D2C4"
+greenColor = "#147D64"
+orangeColor = "#B45A16"
+redColor = "#B42318"
+blueColor = "#245E78"
+font = "'IBM Plex Sans Arabic':https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap"
+baseRadius = "small"
+buttonRadius = "small"
+showWidgetBorder = true
+headingFontWeights = [700, 600, 600, 500, 500, 500]
+
+[server]
+headless = true
+maxUploadSize = 10
