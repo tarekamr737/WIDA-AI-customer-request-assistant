@@ -4,9 +4,11 @@ import streamlit as st
 
 from src.file_parser import FileParseError, extract_request_text
 from src.llm_client import LLMError, OpenAICompatibleLLM
+from src.models import AIAnalysis
 from src.processor import ProcessingOutcome, process_request
 from src.reference_loader import ReferenceLoadError
 from src.renderer import RenderError
+from src.review import approve_request
 from src.storage import StorageError
 
 
@@ -17,12 +19,15 @@ st.set_page_config(
 )
 
 st.session_state.setdefault("processing_outcome", None)
+review_notice = st.session_state.pop("review_notice", None)
 
 st.title("مساعد معالجة طلبات العملاء")
 st.caption(
     "أداة داخلية تستخرج بيانات الطلب، وتقترح الخدمة من دليل هورايزون فقط، "
     "ثم تطبق السياسات قبل المراجعة البشرية."
 )
+if review_notice:
+    st.success(review_notice, icon=":material/check_circle:")
 
 with st.container(border=True):
     st.subheader("طلب جديد", anchor=False)
@@ -210,9 +215,37 @@ if outcome is not None:
                 "اعتماد",
                 type="primary",
                 icon=":material/check_circle:",
-                disabled=True,
             )
-        st.caption("ستُفعّل إجراءات المراجعة بعد حفظ التعديلات والتحقق منها.")
+
+    if approved:
+        try:
+            edited_analysis = AIAnalysis(
+                organization_name=organization_name,
+                contact_name=contact_name,
+                contact_role=contact_role,
+                contact_method=contact_method,
+                need_summary=need_summary,
+                requested_deadline_text=requested_deadline_text,
+                requested_working_days=(
+                    int(requested_working_days)
+                    if requested_working_days is not None
+                    else None
+                ),
+                commercial_register_text=commercial_register_text,
+                primary_service_id=primary_service_id,
+                secondary_service_id=secondary_service_id,
+                classification_state=classification_state,
+                classification_reason=classification_reason,
+            )
+            st.session_state.processing_outcome = approve_request(
+                outcome,
+                edited_analysis,
+            )
+        except (ValueError, RenderError, StorageError) as exc:
+            st.error(str(exc), icon=":material/error:")
+        else:
+            st.session_state.review_notice = "تم اعتماد الطلب وحفظ تعديلات المراجع."
+            st.rerun()
 
     st.subheader("الملخص الداخلي المحفوظ", anchor=False)
     st.code(outcome.rendered_summary, language=None, wrap_lines=True)

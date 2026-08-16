@@ -52,7 +52,7 @@ def _contact_display(analysis: AIAnalysis) -> str:
     return f"{name} - {role}"
 
 
-def _build_summary(
+def build_internal_summary(
     analysis: AIAnalysis, references: ReferenceData, raw_request: str
 ) -> InternalSummary:
     missing_data = find_missing_data(analysis)
@@ -116,7 +116,7 @@ def process_request(
     references = load_references(reference_dir)
     analysis = llm_client.analyze(normalized_request, references.services)
     validate_analysis_service_ids(analysis, list(references.services))
-    summary = _build_summary(analysis, references, normalized_request)
+    summary = build_internal_summary(analysis, references, normalized_request)
     rendered = render_internal_summary(summary, references.raw_template_text)
     timestamp = now()
     request = ProcessedRequest(
