@@ -24,7 +24,7 @@
 - [x] Verify a brand-new request can be processed.
 - [x] Verify changing catalog/policy/prompt takes effect after rerun.
 - [x] Create concise one-page `README.md`.
-- [ ] Run `pytest -q`; fix all failures.
+- [x] Run `pytest -q`; fix all failures.
 - [ ] Run `streamlit run app.py`; complete one full review flow.
 - [ ] Confirm no API keys/secrets are committed.
 
