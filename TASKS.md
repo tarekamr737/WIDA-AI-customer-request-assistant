@@ -5,7 +5,7 @@
 - [x] Create Python project, `requirements.txt`, `.env.example`, `.gitignore`.
 - [x] Implement Pydantic domain models.
 - [x] Implement runtime service/policy reference loader.
-- [ ] Parse catalog IDs/names/use-cases/exclusions/standard durations.
+- [x] Parse catalog IDs/names/use-cases/exclusions/standard durations.
 - [ ] Parse global minimum-execution days from current policy text.
 - [ ] Implement TXT/PDF/DOCX request text extraction.
 - [ ] Create compact `prompts/analyze_request.md`.

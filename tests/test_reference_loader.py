@@ -2,7 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from src.reference_loader import ReferenceLoadError, load_reference_texts
+from src.reference_loader import (
+    DEFAULT_REFERENCE_DIR,
+    ReferenceLoadError,
+    load_reference_texts,
+    parse_service_catalog,
+)
 
 
 def _write_references(directory: Path, *, catalog: str = "catalog") -> None:
@@ -30,3 +35,30 @@ def test_empty_reference_is_rejected(tmp_path: Path) -> None:
 
     with pytest.raises(ReferenceLoadError, match="empty"):
         load_reference_texts(tmp_path)
+
+
+def test_catalog_parser_extracts_all_service_fields_and_durations() -> None:
+    catalog = load_reference_texts(DEFAULT_REFERENCE_DIR).service_catalog
+
+    services = parse_service_catalog(catalog)
+
+    assert [service.id for service in services] == list(range(1, 9))
+    assert services[0].name == "الاستشارات الإدارية والتحول التشغيلي"
+    assert services[0].min_days == 10
+    assert services[0].max_days == 15
+    assert "تحسين عملية" in services[0].use_when
+    assert "الاستشارات القانونية" in services[0].exclusions
+    assert services[7].min_days is None
+    assert services[7].max_days is None
+
+
+def test_catalog_parser_rejects_an_incomplete_catalog() -> None:
+    with pytest.raises(ReferenceLoadError, match="1 to 8"):
+        parse_service_catalog(
+            """1. خدمة واحدة
+   الوصف: وصف
+   تستخدم عندما: حالة
+   لا تشمل: استثناء
+   زمن التنفيذ القياسي: 3 إلى 5 أيام عمل.
+"""
+        )
