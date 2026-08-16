@@ -19,7 +19,7 @@
 - [x] Build Streamlit input + result + editable review UI.
 - [x] Implement `اعتماد` -> update row to `تمت المراجعة`.
 - [x] Implement `يحتاج استيضاح` behavior.
-- [ ] Add fake-LLM unit tests for policy/processor/storage.
+- [x] Add fake-LLM unit tests for policy/processor/storage.
 - [ ] Regression-check Requests A–E without hardcoded request IDs.
 - [ ] Verify a brand-new request can be processed.
 - [ ] Verify changing catalog/policy/prompt takes effect after rerun.
