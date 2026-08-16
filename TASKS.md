@@ -25,7 +25,7 @@
 - [x] Verify changing catalog/policy/prompt takes effect after rerun.
 - [x] Create concise one-page `README.md`.
 - [x] Run `pytest -q`; fix all failures.
-- [ ] Run `streamlit run app.py`; complete one full review flow.
+- [x] Run `streamlit run app.py`; complete one full review flow.
 - [ ] Confirm no API keys/secrets are committed.
 
 ## Only if time remains
