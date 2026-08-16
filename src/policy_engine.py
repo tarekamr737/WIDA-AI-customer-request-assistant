@@ -8,6 +8,7 @@ from src.models import AIAnalysis, CommercialRegisterStatus, PolicyResult, Servi
 _REGISTER_ABSENCE_MARKERS = (
     "غير متوفر",
     "غير متاح",
+    "غير مرفق",
     "لا يوجد",
     "لا نملك",
     "بدون سجل",

@@ -77,6 +77,7 @@ def test_explicitly_absent_register_is_missing_for_execution() -> None:
 
     assert commercial_register_status(analysis.commercial_register_text) == "غير متوفر"
     assert "السجل التجاري" in find_missing_data(analysis)
+    assert commercial_register_status("غير مرفق") == "غير متوفر"
 
 
 def test_missing_commercial_register_blocks_execution() -> None:
