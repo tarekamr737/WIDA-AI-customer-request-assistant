@@ -1,4 +1,4 @@
-"""UTF-8-SIG CSV persistence for processed customer requests."""
+"""Readable UTF-8-SIG CSV persistence for processed customer requests."""
 
 from collections.abc import Iterable
 from pathlib import Path
@@ -10,7 +10,7 @@ from src.models import ProcessedRequest
 
 DEFAULT_RESULTS_PATH = Path(__file__).resolve().parents[1] / "data" / "results.csv"
 
-FIELDNAMES = (
+LEGACY_FIELDNAMES = (
     "request_id",
     "created_at",
     "updated_at",
@@ -40,6 +40,68 @@ FIELDNAMES = (
     "review_status",
 )
 
+FIELDNAMES = (
+    "request_id",
+    "review_status",
+    "created_at",
+    "updated_at",
+    "organization_name",
+    "contact_person_and_role",
+    "contact_method",
+    "need_summary",
+    "primary_service",
+    "secondary_service",
+    "commercial_register",
+    "requested_deadline",
+    "policy_status",
+    "missing_data",
+    "alerts",
+    "next_step",
+    "classification_reason",
+    "input_source",
+    "raw_request",
+    "contact_name",
+    "contact_role",
+    "requested_deadline_text",
+    "requested_working_days",
+    "commercial_register_text",
+    "primary_service_id",
+    "secondary_service_id",
+    "classification_state",
+)
+
+COLUMN_HEADERS = {
+    "request_id": "رقم الطلب",
+    "review_status": "حالة المراجعة",
+    "created_at": "تاريخ الإنشاء (UTC)",
+    "updated_at": "آخر تحديث (UTC)",
+    "organization_name": "اسم الجهة",
+    "contact_person_and_role": "شخص التواصل وصفته",
+    "contact_method": "وسيلة التواصل",
+    "need_summary": "ملخص الاحتياج",
+    "primary_service": "الخدمة الأساسية المقترحة",
+    "secondary_service": "الخدمة الثانوية",
+    "commercial_register": "حالة السجل التجاري",
+    "requested_deadline": "الموعد المطلوب",
+    "policy_status": "تقييم السياسات",
+    "missing_data": "البيانات الناقصة",
+    "alerts": "التنبيهات المهمة",
+    "next_step": "الخطوة التالية المقترحة",
+    "classification_reason": "سبب التصنيف",
+    "input_source": "مصدر الإدخال",
+    "raw_request": "نص الطلب الأصلي",
+    "contact_name": "اسم شخص التواصل",
+    "contact_role": "صفة شخص التواصل",
+    "requested_deadline_text": "نص الموعد الأصلي",
+    "requested_working_days": "عدد أيام العمل المطلوبة",
+    "commercial_register_text": "تفاصيل السجل التجاري",
+    "primary_service_id": "معرف الخدمة الأساسية",
+    "secondary_service_id": "معرف الخدمة الثانوية",
+    "classification_state": "حالة التصنيف التقنية",
+}
+
+CSV_HEADERS = tuple(COLUMN_HEADERS[field] for field in FIELDNAMES)
+
 
 class StorageError(RuntimeError):
     """Raised when stored audit data cannot be safely read or updated."""
@@ -49,8 +111,18 @@ def _optional(value: object | None) -> object:
     return "" if value is None else value
 
 
-def _json_list(values: list[str]) -> str:
-    return json.dumps(values, ensure_ascii=False, separators=(",", ":"))
+def _readable_list(values: list[str]) -> str:
+    return " • ".join(values) if values else "لا توجد"
+
+
+def _read_legacy_list(value: str) -> str:
+    try:
+        parsed = json.loads(value)
+    except (json.JSONDecodeError, TypeError):
+        return value
+    if not isinstance(parsed, list):
+        return value
+    return _readable_list([str(item) for item in parsed])
 
 
 def _to_row(request: ProcessedRequest) -> dict[str, object]:
@@ -80,11 +152,19 @@ def _to_row(request: ProcessedRequest) -> dict[str, object]:
         "commercial_register": summary.commercial_register,
         "requested_deadline": summary.requested_deadline,
         "policy_status": summary.policy_status,
-        "missing_data": _json_list(summary.missing_data),
-        "alerts": _json_list(summary.alerts),
+        "missing_data": _readable_list(summary.missing_data),
+        "alerts": _readable_list(summary.alerts),
         "next_step": summary.next_step,
         "review_status": summary.review_status,
     }
+
+
+def _normalize_row(row: dict[str, str], *, legacy: bool) -> dict[str, str]:
+    normalized = {field: row.get(field, "") for field in FIELDNAMES}
+    if legacy:
+        normalized["missing_data"] = _read_legacy_list(row.get("missing_data", ""))
+        normalized["alerts"] = _read_legacy_list(row.get("alerts", ""))
+    return normalized
 
 
 def _read_rows(path: Path) -> list[dict[str, str]]:
@@ -93,9 +173,23 @@ def _read_rows(path: Path) -> list[dict[str, str]]:
     try:
         with path.open("r", encoding="utf-8-sig", newline="") as handle:
             reader = csv.DictReader(handle)
-            if reader.fieldnames != list(FIELDNAMES):
+            if reader.fieldnames == list(LEGACY_FIELDNAMES):
+                return [_normalize_row(row, legacy=True) for row in reader]
+            if reader.fieldnames == list(CSV_HEADERS):
+                return [
+                    _normalize_row(
+                        {
+                            field: row.get(COLUMN_HEADERS[field], "")
+                            for field in FIELDNAMES
+                        },
+                        legacy=False,
+                    )
+                    for row in reader
+                ]
+            if reader.fieldnames is None:
+                return []
+            else:
                 raise StorageError("Stored CSV columns do not match the expected schema.")
-            return list(reader)
     except StorageError:
         raise
     except OSError as exc:
@@ -109,24 +203,23 @@ def append_request(
     if any(row["request_id"] == request.request_id for row in rows):
         raise StorageError(f"Request ID already exists: {request.request_id}")
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        with path.open("a", encoding="utf-8-sig", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=FIELDNAMES)
-            if not rows:
-                writer.writeheader()
-            writer.writerow(_to_row(request))
-    except OSError as exc:
-        raise StorageError("تعذر حفظ نتيجة الطلب محليًا.") from exc
+    _write_rows(path, [*rows, _to_row(request)])
 
 
 def _write_rows(path: Path, rows: Iterable[dict[str, object]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path = path.with_suffix(path.suffix + ".tmp")
     try:
         with temporary_path.open("w", encoding="utf-8-sig", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=FIELDNAMES)
+            writer = csv.DictWriter(handle, fieldnames=CSV_HEADERS)
             writer.writeheader()
-            writer.writerows(rows)
+            writer.writerows(
+                {
+                    COLUMN_HEADERS[field]: row.get(field, "")
+                    for field in FIELDNAMES
+                }
+                for row in rows
+            )
         temporary_path.replace(path)
     except OSError as exc:
         raise StorageError("تعذر تحديث نتيجة الطلب محليًا.") from exc
@@ -149,3 +242,11 @@ def update_request(
     if matches != 1:
         raise StorageError(f"Expected one stored row for request ID: {request.request_id}")
     _write_rows(path, updated_rows)
+
+
+def migrate_results_file(path: Path = DEFAULT_RESULTS_PATH) -> None:
+    """Rewrite an existing legacy/new CSV with the current readable schema."""
+
+    if not path.exists():
+        return
+    _write_rows(path, _read_rows(path))

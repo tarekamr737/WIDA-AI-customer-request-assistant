@@ -32,7 +32,7 @@ LLM_BASE_URL=https://openrouter.ai/api/v1
 .venv\Scripts\streamlit.exe run app.py
 ```
 
-Open the shown local URL, submit a request, review the editable fields, then choose `اعتماد` or `يحتاج استيضاح`. Results are written to `data/results.csv`; approval updates the same row to `تمت المراجعة`.
+Open the shown local URL, submit a request, review the editable fields, then choose `اعتماد` or `يحتاج استيضاح`. Results are written to `data/results.csv` with readable Arabic, reviewer-first columns; approval updates the same row to `تمت المراجعة`.
 
 ## Tests and checks
 

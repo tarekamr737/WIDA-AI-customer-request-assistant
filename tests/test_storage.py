@@ -1,11 +1,19 @@
 from datetime import UTC, datetime
 from pathlib import Path
 import csv
+import json
 
 import pytest
 
 from src.models import AIAnalysis, InternalSummary, ProcessedRequest
-from src.storage import StorageError, append_request, update_request
+from src.storage import (
+    COLUMN_HEADERS,
+    LEGACY_FIELDNAMES,
+    StorageError,
+    append_request,
+    migrate_results_file,
+    update_request,
+)
 
 
 def _request(*, reviewed: bool = False) -> ProcessedRequest:
@@ -59,9 +67,10 @@ def test_append_writes_utf8_sig_and_auditable_fields(tmp_path: Path) -> None:
     assert path.read_bytes().startswith(b"\xef\xbb\xbf")
     rows = _rows(path)
     assert len(rows) == 1
-    assert rows[0]["raw_request"] == "طلب عربي"
-    assert rows[0]["review_status"] == "بانتظار المراجعة"
-    assert "السجل التجاري" in rows[0]["missing_data"]
+    assert rows[0]["نص الطلب الأصلي"] == "طلب عربي"
+    assert rows[0]["حالة المراجعة"] == "بانتظار المراجعة"
+    assert rows[0]["البيانات الناقصة"] == "السجل التجاري"
+    assert "[" not in rows[0]["التنبيهات المهمة"]
 
 
 def test_update_replaces_the_same_row_without_duplication(tmp_path: Path) -> None:
@@ -75,10 +84,38 @@ def test_update_replaces_the_same_row_without_duplication(tmp_path: Path) -> Non
 
     rows = _rows(path)
     assert len(rows) == 1
-    assert rows[0]["review_status"] == "تمت المراجعة"
-    assert rows[0]["updated_at"] == "2026-08-16T10:00:00+00:00"
+    assert rows[0]["حالة المراجعة"] == "تمت المراجعة"
+    assert rows[0]["آخر تحديث (UTC)"] == "2026-08-16T10:00:00+00:00"
 
 
 def test_update_rejects_an_unknown_request_id(tmp_path: Path) -> None:
     with pytest.raises(StorageError, match="Expected one stored row"):
         update_request(_request(), tmp_path / "missing.csv")
+
+
+def test_legacy_csv_is_migrated_to_readable_arabic_headers(tmp_path: Path) -> None:
+    path = tmp_path / "legacy.csv"
+    legacy_row = {
+        field: "" for field in LEGACY_FIELDNAMES
+    }
+    legacy_row.update(
+        {
+            "request_id": "legacy-1",
+            "organization_name": "شركة قديمة",
+            "missing_data": json.dumps(["السجل التجاري"], ensure_ascii=False),
+            "alerts": json.dumps(["تنبيه أول", "تنبيه ثان"], ensure_ascii=False),
+            "review_status": "بانتظار المراجعة",
+        }
+    )
+    with path.open("w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=LEGACY_FIELDNAMES)
+        writer.writeheader()
+        writer.writerow(legacy_row)
+
+    migrate_results_file(path)
+
+    rows = _rows(path)
+    assert list(rows[0]) == list(COLUMN_HEADERS.values())
+    assert rows[0]["رقم الطلب"] == "legacy-1"
+    assert rows[0]["البيانات الناقصة"] == "السجل التجاري"
+    assert rows[0]["التنبيهات المهمة"] == "تنبيه أول • تنبيه ثان"
