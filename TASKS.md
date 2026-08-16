@@ -15,7 +15,7 @@
 - [x] Implement deterministic policy precedence and alerts.
 - [x] Implement exact internal-summary renderer.
 - [x] Implement UTF-8-SIG CSV append/update persistence.
-- [ ] Auto-save processed result as `بانتظار المراجعة`.
+- [x] Auto-save processed result as `بانتظار المراجعة`.
 - [ ] Build Streamlit input + result + editable review UI.
 - [ ] Implement `اعتماد` -> update row to `تمت المراجعة`.
 - [ ] Implement `يحتاج استيضاح` behavior.
